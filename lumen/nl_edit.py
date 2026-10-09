@@ -39,7 +39,7 @@ PROVIDERS = {
     'local': (N_('其他本地 OpenAI 兼容服务（vLLM、Jan、LocalAI…）'), 'openai', 'http://127.0.0.1:8000/v1', '', True, None, 'template'),
     'openai': ('OpenAI', 'openai', 'https://api.openai.com/v1', 'gpt-6-luna', False, 'json_object', 'openai'),
     'anthropic': ('Anthropic Claude', 'anthropic', 'https://api.anthropic.com', 'claude-opus-5-5', False, None, 'anthropic'),
-    'gemini': ('Google Gemini', 'openai', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-3.8-flash', False, 'json_object', 'gemini'),
+    'gemini': ('Google Gemini', 'gemini', 'https://generativelanguage.googleapis.com/v1beta', 'gemini-3.8-flash', False, 'json_object', 'gemini'),
     'deepseek': (N_('DeepSeek 深度求索'), 'openai', 'https://api.deepseek.com', 'deepseek-flash', False, 'json_object', 'deepseek'),
     'dashscope': (N_('阿里云百炼 · 通义千问'), 'openai', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'qwen3.7-flash', False, 'json_object', 'qwen'),
     'moonshot': (N_('月之暗面 Kimi'), 'openai', 'https://api.moonshot.cn/v1', 'kimi-k2.6', False, 'json_object', 'kimi'),
@@ -68,7 +68,7 @@ THINKING_NOTES = {
     'template': N_('关闭 = chat_template_kwargs.enable_thinking=false；其余 = reasoning_effort。'),
     'openai': N_('reasoning_effort（关闭 = none；模型不支持时自动改用默认）。'),
     'anthropic': N_('output_config.effort。当前 Claude 无法关闭思考，“关闭”按 low 处理；Opus 5.5 默认 medium。'),
-    'gemini': N_('reasoning_effort（关闭 = minimal，“最高”按 high）。'),
+    'gemini': N_('Gemini 3 使用 low / medium / high；“关闭”按 low、“最高”按 high。Gemini 2.5 使用思考预算。'),
     'deepseek': N_('thinking.type + reasoning_effort。DeepSeek 默认开启思考（high），只有 low / high / max 三档，“中”按 high。'),
     'qwen': N_('enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。开启思考时百炼不支持 JSON 模式，改由提示词约束。'),
     'budget': N_('enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。'),
@@ -104,7 +104,8 @@ def thinking_request(style, level, model=''):
     if style == 'anthropic':
         return {'output_config': {'effort': 'low' if off else level}}
     if style == 'gemini':
-        return {'reasoning_effort': 'minimal' if off else capped}
+        from .gemini import thinking_config
+        return thinking_config(level, model)
     if style == 'deepseek':
         if off:
             return {'thinking': {'type': 'disabled'}}
@@ -129,6 +130,8 @@ def thinking_request(style, level, model=''):
 def normalize_base(api, url):
     """Accept a pasted endpoint as well as a base URL (…/chat/completions, …/v1/messages, …/api/chat)."""
     url = url.strip().rstrip('/')
+    if api == 'gemini':
+        return re.sub(r'/models(?:/[^/?]+:generateContent)?$', '', url)
     for suffix in {'ollama': ('/api/chat', '/api', '/v1'), 'anthropic': ('/v1/messages', '/messages', '/v1')}.get(api, ('/chat/completions',)):
         if url.lower().endswith(suffix):
             url = url[:-len(suffix)].rstrip('/')
@@ -328,11 +331,19 @@ def active(settings):
     entry = settings['providers'][key]
     reasoning = settings.get('reasoning', 'default')
     model = entry['model'].strip()
+    base = normalize_base(api, entry['base_url'])
+    if api == 'gemini' and (base.endswith('/openai') or
+                           (base.endswith('/v1') and urllib.parse.urlsplit(base).hostname != 'generativelanguage.googleapis.com')):
+        # Existing OpenAI-compatible Gemini endpoints and proxies keep their wire format.
+        api = 'openai'
     if style == 'qwen' and reasoning != 'off':
         json_mode = None  # Bailian: JSON mode is not available while the model thinks
-    return dict(provider=key, label=tr(label), api=api, base_url=normalize_base(api, entry['base_url']),
+    thinking = thinking_request(style, reasoning, model)
+    if key == 'gemini' and api == 'openai':
+        thinking = {} if reasoning == 'default' else {'reasoning_effort': {'off': 'low', 'max': 'high'}.get(reasoning, reasoning)}
+    return dict(provider=key, label=tr(label), api=api, base_url=base,
                 model=model, key=entry['key'].strip(), local=local, json_mode=json_mode,
-                timeout=settings.get('timeout', 180), reasoning=reasoning, thinking=thinking_request(style, reasoning, model))
+                timeout=settings.get('timeout', 180), reasoning=reasoning, thinking=thinking)
 
 
 # --------------------------------------------------------------------------- parameters
@@ -649,6 +660,9 @@ def list_models(service):
     if api == 'ollama':
         data = _http(base + '/api/tags', timeout=timeout)
         names = [m.get('name') or m.get('model') for m in data.get('models', [])]
+    elif api == 'gemini':
+        from . import gemini
+        return gemini.list_models(service)
     elif api == 'anthropic':
         data = _http(base + '/v1/models?limit=100', headers=_anthropic_headers(service), timeout=timeout)
         names = [m.get('id') for m in data.get('data', [])]
@@ -695,6 +709,9 @@ def complete(service, messages, image=None, usage=None):
     if not service['local'] and not service['key'] and service['provider'] != 'custom':
         raise ServiceError(tr('请先在设置中填写 {label} 的 API Key。', label=service['label']))
     system, chat = messages[0]['content'], [dict(m) for m in messages[1:]]
+    if api == 'gemini':
+        from . import gemini
+        return gemini.complete(service, messages, image, usage)
     if api == 'ollama':
         if image:
             chat[-1]['images'] = [image]

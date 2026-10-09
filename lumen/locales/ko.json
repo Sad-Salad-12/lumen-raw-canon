@@ -541,7 +541,6 @@
  "关闭 = chat_template_kwargs.enable_thinking=false；其余 = reasoning_effort。": "끄기 = chat_template_kwargs.enable_thinking=false, 나머지 = reasoning_effort.",
  "reasoning_effort（关闭 = none；模型不支持时自动改用默认）。": "reasoning_effort (끄기 = none, 모델이 지원하지 않으면 자동으로 기본값 사용).",
  "output_config.effort。当前 Claude 无法关闭思考，“关闭”按 low 处理；Opus 5.5 默认 medium。": "output_config.effort. 현재 Claude는 사고를 끌 수 없어 '끄기'는 low로 처리하며, Opus 5.5 기본값은 medium입니다.",
- "reasoning_effort（关闭 = minimal，“最高”按 high）。": "reasoning_effort (끄기 = minimal, '최고'는 high).",
  "thinking.type + reasoning_effort。DeepSeek 默认开启思考（high），只有 low / high / max 三档，“中”按 high。": "thinking.type + reasoning_effort. DeepSeek은 기본적으로 사고(high)를 켜며 low / high / max 세 단계만 있습니다. '중간'은 high로 처리합니다.",
  "enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。开启思考时百炼不支持 JSON 模式，改由提示词约束。": "enable_thinking + thinking_budget (낮음 1024 / 중간 4096 / 높음 16384 / 최고 32768 token). 사고를 켜면 Model Studio가 JSON 모드를 지원하지 않아 프롬프트로 제약합니다.",
  "enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。": "enable_thinking + thinking_budget (낮음 1024 / 중간 4096 / 높음 16384 / 최고 32768 token).",
@@ -645,7 +644,6 @@
  "超时": "제한 시간",
  "思考越深，结果可能越细致，但更慢、消耗的 token 更多；修图参数通常“低”或“关闭”就够用。": "깊이 생각할수록 결과가 더 세밀할 수 있지만 느려지고 token을 더 많이 씁니다. 보정 매개변수에는 보통 '낮음'이나 '끄기'로 충분합니다.",
  "思考强度": "사고 깊이",
- "附带当前预览图（长边 768 像素；模型需支持图像输入）": "현재 미리 보기 이미지 첨부 (긴 변 768픽셀, 모델이 이미지 입력을 지원해야 함)",
  "语音识别": "음성 인식",
  "说完后自动修图": "말을 마치면 자동 보정",
  "测试连接": "연결 테스트",
@@ -896,5 +894,9 @@
  "污点修复": "스팟 복구",
  "仿制图章": "복제 도장",
  " · 已隐藏": " · 숨김",
- "去除横向色差": "가로 색수차 제거"
+ "去除横向色差": "가로 색수차 제거",
+ "Gemini 3 使用 low / medium / high；“关闭”按 low、“最高”按 high。Gemini 2.5 使用思考预算。": "Gemini 3은 low / medium / high를 사용합니다. 끄기는 low, 최고는 high에 해당합니다. Gemini 2.5는 사고 예산을 사용합니다.",
+ "附带当前预览图（Gemini 长边 1600 像素，其他服务 768 像素）": "현재 미리보기 첨부 (긴 변: Gemini 1600 px, 다른 서비스 768 px)",
+ "Gemini：在 Google AI Studio 创建 API Key，获取模型列表后选择模型。勾选“附带当前预览图”可以让模型看图调色。": "Gemini: Google AI Studio에서 API 키를 만들고 모델 목록을 가져와 선택하세요. 현재 미리보기를 첨부하면 모델이 사진을 보고 색상을 조정할 수 있습니다.",
+ "Gemini 未完成请求：{reason}。": "Gemini가 요청을 완료하지 못했습니다: {reason}."
 }

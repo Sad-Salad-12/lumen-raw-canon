@@ -86,6 +86,12 @@ The model can set 16 global sliders (exposure, contrast, highlights, shadows, wh
 - **Usage:** the status line shows the tokens of each edit, about 2,400. One DeepSeek (deepseek-flash) connection test plus one edit used 2,486 tokens and cost under ¥0.01. Attaching the preview, follow-up turns or other models change this; your provider's bill is authoritative.
 - **Voice:** click **Voice** or press `Ctrl+Shift+Space` (`⌘⇧Space` on a Mac), speak, and pause for about a second; the recognized text is sent automatically (can be turned off in Settings). The bundled SenseVoice-Small model recognizes Chinese, English and mixed speech offline, about 0.1 s for 6 s of speech.
 
+### Google Gemini setup
+
+In **Natural Language → Settings**, select **Google Gemini** and enter an API key from [Google AI Studio](https://aistudio.google.com/apikey). The default endpoint is `https://generativelanguage.googleapis.com/v1beta` and the suggested model is `gemini-3.8-flash`. Fetch the model list to choose an available text model, then use **Test Connection**. Enable **Attach current preview** for visual editing; Gemini receives a JPEG with a maximum long edge of 1600 pixels, plus the instruction, current recipe, photo statistics and shooting data.
+
+Gemini uses Google's native `generateContent` API with JSON Schema for editing replies. The existing recipe validator applies returned parameters and preserves undo. Gemini 3 uses `low`, `medium` or `high` thinking: **Off** maps to `low`, and **Maximum** to `high`. Gemini 2.5 uses token budgets. Existing `/openai` endpoints and OpenAI-compatible proxies ending in `/v1` remain supported. API-key usage is billed by Google; browser or CLI sign-in is not used by this integration.
+
 ## Interface languages
 
 - The **Language** menu at the top offers English, 简体中文, 繁體中文, 日本語, 한국어, Deutsch, Français, Español and Русский. After choosing one, LUMEN RAW offers to restart; unsaved edits are offered for saving first.

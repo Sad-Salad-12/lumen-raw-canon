@@ -244,7 +244,7 @@ class SettingsDialog(QDialog):
         self.thinking_note.setWordWrap(True)
         self.thinking_note.setObjectName('subtle')
         form.addRow('', self.thinking_note)
-        self.attach = QCheckBox(tr('附带当前预览图（长边 768 像素；模型需支持图像输入）'))
+        self.attach = QCheckBox(tr('附带当前预览图（Gemini 长边 1600 像素，其他服务 768 像素）'))
         self.attach.setChecked(settings['attach_image'])
         form.addRow('', self.attach)
         self.voice = QComboBox()
@@ -312,6 +312,10 @@ class SettingsDialog(QDialog):
                               + (tr('，以及一张预览图') if self.attach.isChecked() else '') +
                               tr('。费用按服务商计费。API Key 仅保存在本机') + (tr('，使用 Windows 数据保护加密。') if host.WINDOWS else
                                                        tr('，存放在 macOS 钥匙串中。') if host.MACOS else tr('。')))
+            if key == 'gemini':
+                self.key.setPlaceholderText('Google AI Studio API Key')
+                self.hint.setText(tr('Gemini：在 Google AI Studio 创建 API Key，获取模型列表后选择模型。勾选“附带当前预览图”可以让模型看图调色。')
+                                  + '\n' + self.hint.text())
         if not local and key == 'custom':
             self.key.setPlaceholderText(tr('如果接口需要，填写 Key'))
         self.show_thinking_note()
@@ -584,7 +588,7 @@ class NaturalLanguageMixin:
             shown = engine.crop_rotate(self.rendered, self.edits)
             stats = nl_edit.image_statistics(shown)
             if self.nl_settings['attach_image']:
-                image = nl_edit.preview_jpeg(shown)
+                image = nl_edit.preview_jpeg(shown, size=1600 if service['provider'] == 'gemini' else 768)
         messages = nl_edit.build_messages(instruction, base, self.info, stats, history)
         self.nl_request += 1
         request, sent = self.nl_request, copy.deepcopy(self.edits)

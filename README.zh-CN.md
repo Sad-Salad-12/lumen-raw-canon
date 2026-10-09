@@ -86,6 +86,12 @@ LUMEN RAW 是面向风光与旅行摄影的本地桌面编辑器，支持 Window
 - **用量：** 每次修图后状态栏显示 token 用量，一次约 2,400 个。实测 DeepSeek（deepseek-flash）测试连接 1 次 + 修图 1 次共 2,486 个 token，花费不到 ¥0.01。附带预览图、多轮对话或换用其他模型时会有变化，以服务商账单为准。
 - **语音：** 点「语音」或按 `Ctrl+Shift+Space`（Mac 为 `⌘⇧Space`）说话，停顿约 1 秒自动结束，识别后自动修图（可在设置中关闭）。识别使用随包的 SenseVoice-Small 模型，在本机离线运行，支持中文、英文和中英混说，6 秒语音约 0.1 秒识别完成。
 
+### Google Gemini 接入
+
+在「自然语言 → 设置」中选择 **Google Gemini**，填写 [Google AI Studio](https://aistudio.google.com/apikey) 创建的 API Key。默认接口地址为 `https://generativelanguage.googleapis.com/v1beta`，建议模型为 `gemini-3.8-flash`；点击「获取模型列表」选择账户可用的文本模型，再点击「测试连接」。勾选「附带当前预览图」后，模型会收到长边最多 1600 像素的 JPEG，以及指令、当前调色参数、照片统计和拍摄信息，用于看图调色。
+
+Gemini 使用 Google 原生 `generateContent` 接口，以 JSON Schema 约束调色结果，再交给现有参数校验和撤销流程。Gemini 3 的思考档位为 low / medium / high：「关闭」对应 low，「最高」对应 high；Gemini 2.5 使用思考预算。已有的 `/openai` 地址和以 `/v1` 结尾的 OpenAI 兼容代理继续可用。本接入使用 API Key，由 Google 按 API 用量计费，不复用浏览器或命令行的登录。
+
 ## 界面语言
 
 - 顶部菜单「语言 / Language」可选：简体中文、繁體中文、English、日本語、한국어、Deutsch、Français、Español、Русский。选择后提示重新启动，未保存的编辑会先询问保存。

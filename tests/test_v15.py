@@ -396,7 +396,8 @@ def test_thinking_depth_is_mapped_to_each_providers_own_parameters():
     assert t('openai', 'off') == {'reasoning_effort': 'none'} and t('openai', 'max') == {'reasoning_effort': 'max'}
     assert t('anthropic', 'off') == {'output_config': {'effort': 'low'}}
     assert t('anthropic', 'high') == {'output_config': {'effort': 'high'}}
-    assert t('gemini', 'off') == {'reasoning_effort': 'minimal'} and t('gemini', 'max') == {'reasoning_effort': 'high'}
+    assert t('gemini', 'off') == {'thinkingConfig': {'thinkingLevel': 'low'}}
+    assert t('gemini', 'max') == {'thinkingConfig': {'thinkingLevel': 'high'}}
     assert t('qwen', 'off') == {'enable_thinking': False}
     assert t('qwen', 'low') == {'enable_thinking': True, 'thinking_budget': 1024}
     assert t('budget', 'max') == {'enable_thinking': True, 'thinking_budget': 32768}

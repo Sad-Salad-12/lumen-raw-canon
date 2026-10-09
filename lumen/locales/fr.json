@@ -541,7 +541,6 @@
  "关闭 = chat_template_kwargs.enable_thinking=false；其余 = reasoning_effort。": "Désactivé = chat_template_kwargs.enable_thinking=false ; autres = reasoning_effort.",
  "reasoning_effort（关闭 = none；模型不支持时自动改用默认）。": "reasoning_effort (Désactivé = none ; valeur par défaut si le modèle ne le prend pas en charge).",
  "output_config.effort。当前 Claude 无法关闭思考，“关闭”按 low 处理；Opus 5.5 默认 medium。": "output_config.effort. Les modèles Claude actuels ne peuvent pas désactiver la réflexion, « Désactivé » utilise donc low ; Opus 5.5 utilise medium par défaut.",
- "reasoning_effort（关闭 = minimal，“最高”按 high）。": "reasoning_effort (Désactivé = minimal, « Maximum » utilise high).",
  "thinking.type + reasoning_effort。DeepSeek 默认开启思考（high），只有 low / high / max 三档，“中”按 high。": "thinking.type + reasoning_effort. DeepSeek réfléchit par défaut (high) et n’a que low / high / max ; « Moyen » utilise high.",
  "enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。开启思考时百炼不支持 JSON 模式，改由提示词约束。": "enable_thinking + thinking_budget (Faible 1024 / Moyen 4096 / Élevé 16384 / Maximum 32768 jetons). Avec la réflexion activée, Model Studio ne prend pas en charge le mode JSON ; le prompt impose le format.",
  "enable_thinking + thinking_budget（低 1024 / 中 4096 / 高 16384 / 最高 32768 token）。": "enable_thinking + thinking_budget (Faible 1024 / Moyen 4096 / Élevé 16384 / Maximum 32768 jetons).",
@@ -645,7 +644,6 @@
  "超时": "Délai",
  "思考越深，结果可能越细致，但更慢、消耗的 token 更多；修图参数通常“低”或“关闭”就够用。": "Une réflexion plus profonde peut affiner le résultat, mais elle est plus lente et consomme plus de jetons ; pour les paramètres de retouche, « Faible » ou « Désactivé » suffit généralement.",
  "思考强度": "Profondeur de réflexion",
- "附带当前预览图（长边 768 像素；模型需支持图像输入）": "Joindre l’aperçu actuel (grand côté 768 px ; le modèle doit accepter les images)",
  "语音识别": "Reconnaissance vocale",
  "说完后自动修图": "Retoucher automatiquement après avoir parlé",
  "测试连接": "Tester la connexion",
@@ -896,5 +894,9 @@
  "污点修复": "Correction des taches",
  "仿制图章": "Tampon de duplication",
  " · 已隐藏": " · masqué",
- "去除横向色差": "Supprimer l’aberration chromatique"
+ "去除横向色差": "Supprimer l’aberration chromatique",
+ "Gemini 3 使用 low / medium / high；“关闭”按 low、“最高”按 high。Gemini 2.5 使用思考预算。": "Gemini 3 utilise low / medium / high ; Désactivé correspond à low et Maximum à high. Gemini 2.5 utilise un budget de réflexion.",
+ "附带当前预览图（Gemini 长边 1600 像素，其他服务 768 像素）": "Joindre l’aperçu actuel (grand côté : Gemini 1600 px, autres services 768 px)",
+ "Gemini：在 Google AI Studio 创建 API Key，获取模型列表后选择模型。勾选“附带当前预览图”可以让模型看图调色。": "Gemini : créez une clé API dans Google AI Studio, récupérez la liste des modèles et choisissez-en un. Joignez l’aperçu actuel pour que le modèle puisse voir et ajuster la photo.",
+ "Gemini 未完成请求：{reason}。": "Gemini n’a pas terminé la requête : {reason}."
 }
