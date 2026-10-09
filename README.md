@@ -194,8 +194,8 @@ The repository holds the code, tests, the lensfun lens database, model provenanc
 **Windows** (Python 3.12 x64):
 
 ```powershell
-git clone https://github.com/hety0211/lumen-raw.git
-cd lumen-raw
+git clone --branch codex/google-gemini-native https://github.com/Sad-Salad-12/lumen-raw-canon.git
+cd lumen-raw-canon
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe tools/fetch_assets.py
@@ -214,8 +214,8 @@ For GPU acceleration, switch ONNX Runtime to the Windows ML build (DirectML incl
 **macOS** (Apple silicon, Python 3.12 from python.org, Homebrew or uv):
 
 ```bash
-git clone https://github.com/hety0211/lumen-raw.git
-cd lumen-raw
+git clone --branch codex/google-gemini-native https://github.com/Sad-Salad-12/lumen-raw-canon.git
+cd lumen-raw-canon
 ./run-source.command
 ```
 

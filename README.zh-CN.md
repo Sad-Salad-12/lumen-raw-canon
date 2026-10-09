@@ -194,8 +194,8 @@ Gemini 使用 Google 原生 `generateContent` 接口，以 JSON Schema 约束调
 **Windows**（Python 3.12 x64）：
 
 ```powershell
-git clone https://github.com/hety0211/lumen-raw.git
-cd lumen-raw
+git clone --branch codex/google-gemini-native https://github.com/Sad-Salad-12/lumen-raw-canon.git
+cd lumen-raw-canon
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe tools/fetch_assets.py
@@ -214,8 +214,8 @@ py -3.12 -m venv .venv
 **macOS**（Apple 芯片，Python 3.12，可来自 python.org、Homebrew 或 uv）：
 
 ```bash
-git clone https://github.com/hety0211/lumen-raw.git
-cd lumen-raw
+git clone --branch codex/google-gemini-native https://github.com/Sad-Salad-12/lumen-raw-canon.git
+cd lumen-raw-canon
 ./run-source.command
 ```
 
