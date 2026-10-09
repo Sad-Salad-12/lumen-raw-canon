@@ -11,7 +11,7 @@ from PySide6.QtGui import QAction, QKeySequence, QFont, QFontDatabase, QIcon, QP
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QTabWidget, QScrollArea, QComboBox, QCheckBox, QListWidget,
     QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QSpinBox,
-    QFrame, QSplitter, QProgressDialog, QStatusBar, QSizePolicy)
+    QFrame, QSplitter, QProgressDialog, QStatusBar, QSizePolicy, QStackedWidget)
 from . import engine, model, compute, host, i18n, __version__
 from .scheduler import Activity as A, Job, JobScheduler, JobSignals, WorkState, WorkStateAccess
 from .widgets import AdjustSlider, Canvas, CurveEditor, Histogram, TabStrip
@@ -19,6 +19,7 @@ from .studio import StudioMixin
 from .revision import RevisionMixin
 from .resolution import ResolutionMixin
 from .library import LibraryMixin
+from .culling_panel import CullingMixin
 from .auto_masks import AutoMaskMixin
 from .workflow import WorkflowMixin
 from .nl_panel import NaturalLanguageMixin
@@ -219,7 +220,7 @@ def heading(text):
 from .enhance_dialog import ExportDialog
 
 
-class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin, LibraryMixin, ResolutionMixin, AutoMaskMixin, RevisionMixin, StudioMixin, QMainWindow):
+class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin, CullingMixin, LibraryMixin, ResolutionMixin, AutoMaskMixin, RevisionMixin, StudioMixin, QMainWindow):
     export_progress = Signal(int, str)
 
     def __init__(self):
@@ -271,6 +272,7 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         self.init_resolution()
         self.init_library()
         self.init_natural_language()
+        self.init_culling()
         self.build_ui()
         self.shortcuts()
         self.refresh()
@@ -302,6 +304,7 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         bar.addSpacing(18)
         bar.addWidget(badge)
         bar.addStretch()
+        bar.addWidget(self.button(tr('照片集工作台'), self.show_collection))
         self.open_button = self.button(tr('打开原片'), self.open_file)
         bar.addWidget(self.open_button)
         self.save_button = self.button(tr('保存工程'), self.save)
@@ -404,12 +407,21 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         splitter.setSizes([225, 870, 405])
         outer.addWidget(splitter, 1)
         outer.addWidget(self.build_filmstrip())
-        self.setCentralWidget(central)
+        self.editor_page = central
+        self.workspace_stack = QStackedWidget()
+        self.workspace_stack.addWidget(central)
+        from .culling_panel import CullingDialog
+        self.collection_page = CullingDialog(self, embedded=True)
+        self.workspace_stack.addWidget(self.collection_page)
+        self.workspace_stack.setCurrentWidget(self.collection_page)
+        self.setCentralWidget(self.workspace_stack)
         self.statusBar().showMessage(tr('准备就绪 · 原片始终保留 · {shortcut} 打开', shortcut=host.keys("Ctrl+O")))
         self.state_label = self.statusBar().state_label
         self.state_label.setText('16-bit RAW  /  sRGB')
         self.statusBar().refresh_mode()
         self.build_menus()
+        self.workspace_stack.currentChanged.connect(lambda _: self.refresh_access())
+        self.work.changed.connect(self.refresh_access)
 
     def panel(self, title):
         scroll = QScrollArea()
@@ -691,7 +703,8 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
             return self.open_album(paths[0])
         photos = [p for p in paths if Path(p).suffix.lower() not in ('.lumen','.lumenalbum')]
         self.add_documents(photos)
-        self.open_path(paths[0])
+        if Path(paths[0]).suffix.lower()=='.lumen':self.open_path(paths[0])
+        else:self.show_collection()
 
     def open_path(self, path):
         if self.work.busy(A.AI):return
@@ -700,6 +713,7 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         if not self.work.can_start(A.LOADING):
             self.statusBar().showMessage(tr('请等待当前读取／导出完成。'))
             return
+        self.workspace_stack.setCurrentWidget(self.editor_page)
         self.stash_document()
         explicit_project = Path(path).suffix.lower()=='.lumen'
         document = self.documents.get(str(Path(path).resolve())) if not explicit_project else None
@@ -1108,6 +1122,7 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
             self.commit()
 
     def undo(self, delta):
+        if self.work.busy(A.AI) or self.workspace_stack.currentWidget() is self.collection_page:return
         if self.source is None:
             return
         if delta < 0:
@@ -1149,6 +1164,8 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         self.update_display()
 
     def save(self):
+        if self.workspace_stack.currentWidget() is self.collection_page:
+            return self.save_album() if not self.work.busy() else False
         if self.source is None or self.loading:
             return False
         path = self.project_path
@@ -1172,6 +1189,8 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
 
     def export(self, checked=False, enhance=False):
         if enhance:return self.open_ai('super')
+        if self.workspace_stack.currentWidget() is self.collection_page:
+            return self.collection_page.export_keeps()
         if self.work.busy(A.AI):return
         if self.work.busy(A.SELECTION):
             self.statusBar().showMessage(tr('正在生成蒙版，请完成后再导出。'))
