@@ -1,7 +1,7 @@
 """Browseable menus, watermark preferences and exclusive AI task scheduling."""
 from PySide6.QtGui import QActionGroup
 from PySide6.QtWidgets import QDialog,QMessageBox
-from . import i18n
+from . import i18n, culling
 from .ai_dialog import EnhancementDialog
 from .scheduler import Activity as A
 from .watermark_dialog import WatermarkDialog
@@ -89,6 +89,14 @@ class WorkflowMixin:
         self.tabs.setEnabled(True)
         for index in range(self.tabs.count()):self.tabs.widget(index).widget().setEnabled(active)
         self.backend_combo.setEnabled(active)
-        self.menu_save.setEnabled(active);self.menu_export.setEnabled(active and not self.work.busy(A.EXPORTING))
+        in_collection = hasattr(self, 'collection_page') and self.workspace_stack.currentWidget() is self.collection_page
+        collection_active = in_collection and not self.work.busy() and not self.nl_busy
+        active = active and not in_collection
+        self.menu_save.setText(tr('保存选片集') if in_collection else tr('保存当前工程'))
+        self.menu_export.setText(tr('导出保留片') if in_collection else tr('导出成片…'))
+        self.menu_save.setEnabled(active or collection_active and bool(self.documents))
+        self.menu_export.setEnabled((active and not self.work.busy(A.EXPORTING)) or
+                                    collection_active and any(culling.status(d.get('culling', {})) == 'keep' for d in self.documents.values()))
         self.menu_album.setEnabled((bool(self.documents) or self.library_structure_dirty) and not self.work.busy(A.AI))
         self.refresh_culling()
+        if hasattr(self, 'collection_page'):self.collection_page.refresh_counts()

@@ -11,7 +11,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QListWidget, QListWidgetItem, QAbstractItemView, QFileDialog, QMessageBox,QMenu,QDialog,QProgressDialog)
-from . import model, engine, host, culling
+from . import model, engine, host, culling, collection
 from .scheduler import Activity as A
 from .widgets import qimage
 from .i18n import tr
@@ -21,12 +21,15 @@ def new_document(path):
     edits=model.recipe()
     return dict(path=str(Path(path).resolve()), edits=edits, saved_edits=copy.deepcopy(edits),
                 snapshots=[],saved_snapshots=[],project='',initialized=False,
-                culling={},saved_culling={})
+                culling={},saved_culling={},initial_adjustment={},saved_initial_adjustment={},
+                initial_base=None,saved_initial_base=None)
 
 
 def dirty(document):
     return (document['edits']!=document['saved_edits'] or document['snapshots']!=document['saved_snapshots']
-            or document.get('culling', {}) != document.get('saved_culling', {}))
+            or document.get('culling', {}) != document.get('saved_culling', {})
+            or document.get('initial_adjustment', {}) != document.get('saved_initial_adjustment', {})
+            or document.get('initial_base') != document.get('saved_initial_base'))
 
 
 def thumbnail(path):
@@ -291,6 +294,8 @@ class LibraryMixin:
         count=len(self.filmstrip.selectedItems())
         self.library_count.setText(tr('选片集 · {n_items} 张 / 已选 {count} 张', n_items=len(self.documents), count=count))
         self.sync_button.setEnabled(self.source is not None and count>0 and not self.loading)
+        if hasattr(self,'collection_page'):self.collection_page.sync_documents()
+        if hasattr(self,'menu_save'):self.refresh_access()
 
     def sync_look(self):
         if self.source is None or self.loading:return
@@ -327,8 +332,10 @@ class LibraryMixin:
                 documents.append(dict(source=source,edits=model.validate(document['edits']),
                     snapshots=model.validate_snapshots(document['snapshots']),initialized=document['initialized'],
                     culling=culling.clean_record(document.get('culling', {}))))
+                documents[-1].update(initial_adjustment=collection.clean(document.get('initial_adjustment', {})),
+                                     initial_base=model.validate(document['initial_base']) if isinstance(document.get('initial_base'),dict) else None)
             data=json.dumps(dict(application='Lumen album',version=1,documents=documents,
-                                 culling_options=self.cull_preferences),ensure_ascii=False)
+                                 culling_options=self.cull_preferences, adjustment_options=self.collection_preferences),ensure_ascii=False)
             if len(data.encode('utf-8'))>128*1024*1024:raise ValueError(tr('选片集过大，请拆分保存。'))
             temp=path.with_suffix('.lumenalbum.tmp');temp.write_text(data,encoding='utf-8');temp.replace(path)
             self.album_path=str(path)
@@ -337,6 +344,8 @@ class LibraryMixin:
                 document['saved_edits']=copy.deepcopy(document['edits'])
                 document['saved_snapshots']=copy.deepcopy(document['snapshots'])
                 document['saved_culling']=copy.deepcopy(document.get('culling', {}))
+                document['saved_initial_adjustment']=copy.deepcopy(document.get('initial_adjustment', {}))
+                document['saved_initial_base']=copy.deepcopy(document.get('initial_base'))
             self.saved_edits=copy.deepcopy(self.edits)
             self.saved_snapshots=copy.deepcopy(self.snapshots)
             self.state_label.setText(tr('选片集已保存'))
@@ -361,6 +370,14 @@ class LibraryMixin:
                               culling=culling.clean_record(item.get('culling', {})))
                 record['saved_edits']=copy.deepcopy(record['edits']);record['saved_snapshots']=copy.deepcopy(record['snapshots'])
                 record['saved_culling']=copy.deepcopy(record['culling'])
+                record['initial_adjustment']=collection.clean(item.get('initial_adjustment', {}))
+                if isinstance(item.get('initial_base'),dict):
+                    try:record['initial_base']=model.validate(item['initial_base'])
+                    except ValueError:record['initial_adjustment']={}
+                if record['initial_adjustment'].get('applied_hash') and record['initial_base'] is None:
+                    record['initial_adjustment']={}
+                record['saved_initial_adjustment']=copy.deepcopy(record['initial_adjustment'])
+                record['saved_initial_base']=copy.deepcopy(record['initial_base'])
                 records[source]=record
             available=[p for p in records if Path(p).exists()]
             if records and not available:raise ValueError(tr('选片集的原片均已移动或存储设备未连接。'))
@@ -369,13 +386,17 @@ class LibraryMixin:
             self.add_documents(records)
             self.documents=records
             self.cull_history.clear()
+            self.collection_history.clear()
             self.cull_preferences=culling.album_options(data.get('culling_options'))
+            try:self.collection_preferences=collection.settings(**data.get('adjustment_options', {}))
+            except (TypeError, ValueError):self.collection_preferences=collection.settings()
+            self.collection_page.load_preferences()
             self.cull_filter.setCurrentIndex(0)
             self.update_library_status()
             self.album_path=str(path)
             self.library_structure_dirty=False
-            if available:self.open_path(available[0])
-            else:self.clear_current_photo()
+            self.clear_current_photo()
+            self.show_collection()
         except Exception as exc:self.error(str(exc))
 
     def confirm_close_library(self):
