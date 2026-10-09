@@ -19,6 +19,7 @@ from .studio import StudioMixin
 from .revision import RevisionMixin
 from .resolution import ResolutionMixin
 from .library import LibraryMixin
+from .culling_panel import CullingMixin
 from .auto_masks import AutoMaskMixin
 from .workflow import WorkflowMixin
 from .nl_panel import NaturalLanguageMixin
@@ -219,7 +220,7 @@ def heading(text):
 from .enhance_dialog import ExportDialog
 
 
-class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin, LibraryMixin, ResolutionMixin, AutoMaskMixin, RevisionMixin, StudioMixin, QMainWindow):
+class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin, CullingMixin, LibraryMixin, ResolutionMixin, AutoMaskMixin, RevisionMixin, StudioMixin, QMainWindow):
     export_progress = Signal(int, str)
 
     def __init__(self):
@@ -271,6 +272,7 @@ class MainWindow(WorkStateAccess, WorkflowMixin, NaturalLanguageMixin, LensMixin
         self.init_resolution()
         self.init_library()
         self.init_natural_language()
+        self.init_culling()
         self.build_ui()
         self.shortcuts()
         self.refresh()

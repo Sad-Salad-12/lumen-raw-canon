@@ -4,7 +4,9 @@
 
 [中文说明](README.zh-CN.md) · [Downloads](https://github.com/hety0211/lumen-raw/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
 
-LUMEN RAW is a local desktop editor for landscape and travel photography on Windows and Apple silicon Macs. No account is required. The interface is available in nine languages: English, 简体中文, 繁體中文, 日本語, 한국어, Deutsch, Français, Español and Русский. Opening, editing, lens corrections, AI denoising / super-resolution / masks and export all run offline on your computer. The network is used only when you choose a cloud language model for natural-language editing.
+**Fork additions:** native Gemini editing and AI photo culling are available in this fork's source. The download links below still point to upstream releases, which do not include these additions. A new installer has not been built.
+
+LUMEN RAW is a local desktop editor for landscape and travel photography on Windows and Apple silicon Macs. No account is required. The interface is available in nine languages: English, 简体中文, 繁體中文, 日本語, 한국어, Deutsch, Français, Español and Русский. Opening, editing, lens corrections, AI denoising / super-resolution / masks and export all run offline on your computer. Cloud natural-language editing and optional Gemini photo culling use the network.
 
 Current version: **1.5.2** (Windows 2026-10-05, macOS 2026-10-08).
 
@@ -46,9 +48,25 @@ Both platforms have the same features. Projects (`.lumen`) and albums (`.lumenal
 - **Masks:** brush, linear and radial gradients, luminance range, similar-color selection, and local AI models for sky, people, subject, background and foreground. Invert, feather, opacity and brush refinement; up to 32 masks per photo.
 - **AI enhancement:** Real-ESRGAN 2× / 4× super-resolution and DRUNet / NAFNet / FFDNet denoising, each with its own preview dialog. Results are saved as editable DNG copies.
 - **Photo merging:** focus stacking, HDR stacking (Mertens exposure fusion with three deghosting levels) and panoramas up to 200 megapixels, from 2–32 photos.
-- **Culling and batches:** import many photos at once, multi-select in the filmstrip with Ctrl / Shift, copy the current edit to the selection, or batch-export JPEG / PNG / TIFF / DNG with an optional long-edge size.
+- **AI culling and batches:** Gemini recommends photographs to keep, flags reject candidates and leaves uncertain frames for review, with reasons, confidence and comparisons of similar burst frames. Manually override or undo, filter the filmstrip and select recommended photos for batch export. See [AI photo culling](#ai-photo-culling).
 - **Large images:** 100% view of original pixels, rendering only what is on screen. Editing a zoomed 61-megapixel photo keeps GUI stalls to about 40 ms. Before / after, hold-for-original and clipping warnings.
 - **Watermarks and export:** four border styles with shooting information. Export JPEG / PNG (8-bit), TIFF (16-bit) and linear DNG (16-bit), up to 400 megapixels.
+
+## AI photo culling
+
+This fork adds **AI Culling…** above the filmstrip. It uses the Google Gemini service configured in **Natural Language → Settings**, independently of the service currently selected for editing. Configure a Gemini API key, an image-capable model and the native `https://generativelanguage.googleapis.com/v1beta` endpoint. Existing OpenAI-compatible endpoints still work for editing; culling requires the native Gemini endpoint.
+
+1. Import RAW files (including supported Canon CR3) or JPEG / PNG / TIFF. Click **AI Culling…**, choose all or selected photos, a genre, and optional preferences such as “keep natural expressions; allow night-scene noise.”
+2. Click **Start AI Culling**. The app sends labelled, camera-developed JPEG previews with a maximum long edge of 1600 pixels, plus the genre, preferences and preview sharpness/clipping measurements. It sends no original RAW files, paths, filenames, API keys in prompts, GPS or other EXIF. Culling always attaches images, regardless of the editing preview checkbox. Google bills API usage.
+3. Review **Recommended / Review / Reject candidates**, each with a visual reason, usefulness score and model-reported confidence. The default threshold is 90%; rejection always requires at least 90%. Confidence is a model estimate, not a measured accuracy guarantee. Uncertain focus, recoverable-looking exposure and failed analysis go to Review. The local measurements cannot reject a photograph by themselves.
+4. Double-click a row to open the large photo in the editor, or select rows and manually change their labels. **Restore AI Decision** removes a manual override. **Undo Culling** reverses an analysis or manual-label operation without changing editing history. Manual labels are preserved even with **Reanalyze**.
+5. Use the filmstrip filter and **Select Recommended**, then right-click **Batch Export**. Hidden photos are excluded. **Save Selection** stores results, overrides and preferences in `.lumenalbum`; reopening old albums also works. Individual `.lumen` files contain editing recipes, not the shoot's culling decisions.
+
+Nearby similar frames are grouped using perceptual similarity, aspect ratio and capture times when available. Gemini verifies duplicates visually and must point to a confidently recommended frame in the same group. Comparison windows contain at most six images; long bursts are split, so this does not guarantee one global winner or detect non-adjacent duplicates across a whole shoot. Unique expressions, deliberate blur, silhouettes and artistic scenes should be preserved or reviewed.
+
+Requests run sequentially in the background. Stop retains completed results; an in-flight HTTP response is discarded after cancellation, with no further batch sent. Authentication, quota and network failures stop the queue; unreadable files and malformed assessments remain in Review. Photos not reached retain their previous labels, if any; the detail panel shows the analysis model, time and preferences. Unchanged batches can resume from cached results; full file hashes, comparison context, model, endpoint, thinking options, language and selection preferences determine cache validity. Changing edits does not invalidate culling because it judges the original camera-developed baseline. Preferences and results must be saved as an album to survive restart.
+
+Development verification uses synthetic photos, a local Gemini protocol server and Qt workflow tests. Real Gemini selection quality and camera-specific focus judgments still need validation with an API key and representative shoots. See [Google's image input documentation](https://ai.google.dev/gemini-api/docs/generate-content/image-understanding).
 
 ## Lens corrections
 
@@ -141,7 +159,7 @@ Gemini uses Google's native `generateContent` API with JSON Schema for editing r
 | API keys | in the settings file, DPAPI-encrypted | login keychain ("LUMEN RAW") |
 
 - Originals are read-only. Edits live in `.lumen` / `.lumenalbum` files; AI and merge results are saved as new DNG files. Removing a photo from the filmstrip does not delete it from disk.
-- The app goes online only when you edit with a cloud model, and when Windows downloads TensorRT for RTX the first time. Running from source also downloads the runtime assets once. The lens database is bundled; identifying lenses needs no network.
+- The app goes online for cloud editing or Gemini culling, and when Windows downloads TensorRT for RTX the first time. Running from source also downloads the runtime assets once. The lens database is bundled; identifying lenses needs no network.
 - No official camera or lens brand logos are bundled; watermark brand names use ordinary fonts, and you can import logos you have the right to use.
 
 ## Limits

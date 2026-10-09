@@ -71,7 +71,7 @@ def list_models(service):
     return sorted(set(names))
 
 
-def complete(service, messages, image=None, usage=None):
+def complete(service, messages, image=None, usage=None, *, images=None, schema=None):
     from .nl_edit import _http, _usage, ServiceError, system_prompt
     name = service['model'].removeprefix('models/')
     if not re.fullmatch(r'[A-Za-z0-9_.-]+', name):
@@ -80,8 +80,16 @@ def complete(service, messages, image=None, usage=None):
                  'parts': [{'text': message['content']}]} for message in messages[1:]]
     if image:
         contents[-1]['parts'].insert(0, {'inlineData': {'mimeType': 'image/jpeg', 'data': image}})
+    if images:
+        # Labels immediately precede their images, so multi-photo assessments cannot
+        # accidentally rely on filenames or on the order of a separate text list.
+        for label, encoded in images:
+            contents[-1]['parts'].extend([
+                {'text': label}, {'inlineData': {'mimeType': 'image/jpeg', 'data': encoded}}])
     output = {'mimeType': 'application/json'}
-    if messages[0]['content'] == system_prompt():
+    if schema is not None:
+        output['schema'] = schema
+    elif messages[0]['content'] == system_prompt():
         output['schema'] = edit_schema()
     generation = {'responseFormat': {'text': output}, 'maxOutputTokens': 16384,
                   **service.get('thinking', {})}

@@ -91,3 +91,4 @@ class WorkflowMixin:
         self.backend_combo.setEnabled(active)
         self.menu_save.setEnabled(active);self.menu_export.setEnabled(active and not self.work.busy(A.EXPORTING))
         self.menu_album.setEnabled((bool(self.documents) or self.library_structure_dirty) and not self.work.busy(A.AI))
+        self.refresh_culling()
